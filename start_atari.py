@@ -6,6 +6,8 @@ parser.add_argument("-r", "--render", action="store_true", default=False,
     help="render the game during training or testing")
 parser.add_argument("-g", "--game", default="Pong-v0",
     help="game id in gym")
+parser.add_argument("-f", "--frames-to-images", action="store_true", default=False,
+    help="save frames as .bmp images")
 args = parser.parse_args()
 
 import environment
@@ -14,7 +16,7 @@ import numpy as np
 skip_start = 20
 
 # Make environment
-env = environment.GymEnvironment(args.game)
+env = environment.GymEnvironment(args.game, args.frames_to_images)
 n_outputs = env.numActions()
 
 done = True
