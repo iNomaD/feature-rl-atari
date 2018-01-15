@@ -41,7 +41,5 @@ class GymEnvironment():
   def getFeatures(self):
     assert self.obs is not None
 
-    features = self.ip.pipeline(self.obs)
+    return self.ip.pipeline(self.obs)
 
-
-    return features

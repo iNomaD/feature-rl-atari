@@ -4,7 +4,42 @@ import numpy as np
 from scipy.misc import toimage, imread, imsave
 import cv2
 
-class ImageProcessor():
+
+class FeatureVector:
+
+    def __init__(self, n_class_instances, feature_vector_size):
+        self.n_class_instances = n_class_instances
+        self.raw_size = feature_vector_size
+        self.vector = []
+
+    def fill_next_class(self, n_alive, object_list):
+        self.vector.append((n_alive, object_list))
+
+    def to_raw(self):
+        raw_vector = []
+        for (n_alive, object_list) in self.vector:
+            raw_vector.append(n_alive)  # n
+            for obj in object_list:
+                if obj == []:
+                    raw_vector.append(0.0)  # x
+                    raw_vector.append(0.0)  # y
+                    raw_vector.append(0.0)  # vx
+                    raw_vector.append(0.0)  # vy
+                else:
+                    raw_vector.append(obj[0])  # x
+                    raw_vector.append(obj[1])  # y
+                    raw_vector.append(obj[2])  # vx
+                    raw_vector.append(obj[3])  # vy
+
+        assert len(raw_vector) == self.raw_size
+        return raw_vector
+
+    def get_class(self, i):
+        assert len(self.vector) == len(self.n_class_instances)
+        return self.vector[i]
+
+
+class ImageProcessor:
 
     def __init__(self, env_id, frames_to_images):
         self.env_id = env_id
@@ -13,14 +48,30 @@ class ImageProcessor():
 
         # load classes of game objects
         self.classes = []
+        self.n_class_instances = []
         class_path = 'res/classes/' + env_id
         class_subdirs = os.listdir(class_path)
         for subdir in class_subdirs:
             class_filenames = os.listdir(class_path + '/' + subdir)
+            max_instances = 1
             contents = []
             for file in class_filenames:
-                contents.append(imread(class_path + '/' + subdir + '/' + file))
+                if file.endswith('.max'):
+                    max_instances = int(os.path.splitext(file)[0])
+                else:
+                    contents.append(imread(class_path + '/' + subdir + '/' + file))
             self.classes.append(contents)
+            self.n_class_instances.append(max_instances)
+
+        # generate initial feature vector
+        self.feature_vector_size = len(self.n_class_instances)+4*sum(self.n_class_instances)
+        vector = FeatureVector(self.n_class_instances, self.feature_vector_size)
+        for i in range(0, len(self.classes)):
+            object_list = []
+            for j in range(0, self.n_class_instances[i]):
+                object_list.append([])
+            vector.fill_next_class(0, object_list)
+        self.previous_vector = vector
 
         # hardcoded sizes of actual game screen (speedup preprocessing)
         if self.env_id == "MsPacman-v0":
@@ -44,23 +95,35 @@ class ImageProcessor():
         except:
             self.bg = None
 
+    def get_feature_vector_size(self):
+        return self.feature_vector_size
+
     def pipeline(self, image):
-        #image = self.remove_background(image)
         image = self.crop_image(image)
-        image = self.detect_instances(image)
-        #toimage(image).show()
+        instances = self.detect_instances(image)
+        features = self.generate_feature_vector(instances)
+        print(features.to_raw())
+        return features.to_raw()
 
     def crop_image(self, image):
         h_beg, h_end = self.height_range
         return image[h_beg:h_end, ...]
 
+    def remove_background(self, image):
+        assert image.shape == self.bg.shape
+        R = image[..., 0]
+        G = image[..., 1]
+        B = image[..., 2]
+        cond = (R == self.bg_r) & (G == self.bg_g) & (B == self.bg_b)
+        image[cond] = [0, 0, 0]
+        return image
+
     def detect_instances(self, image):
         palette = np.copy(image)
-        features = []
-        for templates in self.classes:
-            obj = self.find_objects(image, templates, palette)
-            features.append(obj)
-            #print("objects: " + str(len(obj)))
+        instances = []
+        for cls in self.classes:
+            obj = self.find_objects(image, cls, palette)
+            instances.append(obj)
 
         #toimage(image).show()
         if self.frames_to_images:
@@ -68,6 +131,8 @@ class ImageProcessor():
                 os.makedirs('frames')
             imsave('frames/'+str(self.frame)+'.png', palette)
             self.frame = self.frame + 1
+
+        return instances
 
     def find_objects(self, image, templates, palette):
         # assume all the templates of the same class are the same color
@@ -105,4 +170,39 @@ class ImageProcessor():
                     break
         return res
 
+    def generate_feature_vector(self, instances):
+        vector = FeatureVector(self.n_class_instances, self.feature_vector_size)
+        p_vector = self.previous_vector
+
+        for c in range(0, len(instances)):
+            instance_class = instances[c]
+            p_instance_class = p_vector.get_class(c)
+            n_max = self.n_class_instances[c]
+            n_alive = len(instance_class)
+
+            # actual values
+            object_list = []
+            i = 0
+            while i < len(instance_class) and i < n_max:
+                position = instance_class[i]
+                p_position = p_instance_class[1][i]
+                x = position[0] + position[2] / 2
+                y = position[1] + position[3] / 2
+                if p_position == []:
+                    object_list.append((x, y, 0, 0))
+                else:
+                    vx = x - p_position[0]
+                    vy = y - p_position[1]
+                    object_list.append((x, y, vx, vy))
+                i = i + 1
+
+            # missing values
+            while i < n_max:
+                object_list.append([])
+                i = i + 1
+
+            vector.fill_next_class(n_alive, object_list)
+
+        self.previous_vector = vector
+        return vector
 
