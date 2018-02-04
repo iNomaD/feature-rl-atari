@@ -41,9 +41,10 @@ class FeatureVector:
 
 class ImageProcessor:
 
-    def __init__(self, env_id, frames_to_images):
+    def __init__(self, env_id, frames_to_images, debug):
         self.env_id = env_id
         self.frames_to_images = frames_to_images
+        self.debug = debug
         self.frame = 0
 
         # load classes of game objects
@@ -85,6 +86,10 @@ class ImageProcessor:
         else:
             self.height_range = (0, 210)
 
+        # width and height for normalization
+        self.width = 160
+        self.height = self.height_range[1] - self.height_range[0]
+
         # try to load background (optional)
         try:
             bg_load = imread('res/background/'+env_id+"-bg.bmp")
@@ -102,7 +107,8 @@ class ImageProcessor:
         image = self.crop_image(image)
         instances = self.detect_instances(image)
         features = self.generate_feature_vector(instances)
-        print(features.to_raw())
+        if self.debug:
+            print(features.to_raw())
         return features.to_raw()
 
     def crop_image(self, image):
@@ -188,11 +194,16 @@ class ImageProcessor:
                 p_position = p_instance_class[1][i]
                 x = position[0] + position[2] / 2
                 y = position[1] + position[3] / 2
+
+                # normalize position to [-1, 1] with 3 digits after .
+                x = round(2 * x / self.width - 1, 3)
+                y = round(2 * y / self.width - 1, 3)
+
                 if p_position == []:
                     object_list.append((x, y, 0, 0))
                 else:
-                    vx = x - p_position[0]
-                    vy = y - p_position[1]
+                    vx = round(x - p_position[0], 3)
+                    vy = round(y - p_position[1], 3)
                     object_list.append((x, y, vx, vy))
                 i = i + 1
 

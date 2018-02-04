@@ -3,13 +3,13 @@ import feature_extraction
 
 class GymEnvironment():
 
-  def __init__(self, env_id, frames_to_images):
+  def __init__(self, env_id, frames_to_images, debug):
     self.env_id = env_id
     self.gym = gym.make(env_id)
     self.obs = None
     self.terminal = None
 
-    self.ip = feature_extraction.ImageProcessor(env_id, frames_to_images)
+    self.ip = feature_extraction.ImageProcessor(env_id, frames_to_images, debug)
 
     # Define actions for games (gym-0.9.4 and ALE 0.5.1)
     if env_id == "Pong-v0":
@@ -22,6 +22,9 @@ class GymEnvironment():
   def numActions(self):
     assert isinstance(self.gym.action_space, gym.spaces.Discrete)
     return len(self.action_space)
+
+  def featureVectorSize(self):
+      return self.ip.get_feature_vector_size()
 
   def restart(self):
     self.obs = self.gym.reset()
@@ -40,6 +43,5 @@ class GymEnvironment():
 
   def getFeatures(self):
     assert self.obs is not None
-
     return self.ip.pipeline(self.obs)
 
