@@ -1,0 +1,9 @@
+numpy
+tensorflow
+
+# There are a few dependencies you need to install first, check out:
+# https://github.com/openai/gym#installing-everything
+gym
+atari-py
+Pillow
+PyOpenGL

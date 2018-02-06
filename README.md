@@ -1,9 +1,10 @@
 ## The aim of this project is the development of intelligent agents which are able to play atari games.
 
-### Technologies:
-* Python 3.5
+### Requirements:
+* Python3
 * OpenCV
-* OpenAI Gym
+* Tensorflow
+* OpenAI Gym Atari
 
 ### Example of object recognition
 ![Pong](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/Pong.gif)
@@ -11,4 +12,6 @@
 ![SpaceInvaders](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/SpaceInvaders.gif)
 ![MsPacman](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/MsPacman.gif)
 
-
+### Links
+* https://github.com/j8lp/atari-py
+* https://github.com/ageron/tiny-dqn
