@@ -169,6 +169,7 @@ with tf.Session() as sess:
     step = global_step.eval()
     episode = global_episode.eval()
     total_time = global_time.eval()
+    print("Feature vector size: %d", (n_inputs))
     print("Starting with step=%d, episode=%d, total_time=%d" % (step, episode, total_time/60))
 
     while True:
