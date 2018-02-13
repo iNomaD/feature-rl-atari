@@ -80,4 +80,5 @@ def drawrect(img,pt1,pt2,color):
     pts.append((pt2[0], pt2[1]))
 
     for point in pts:
-        img[point[1], point[0]] = color
+        if point[1] >= 0 and point[1] < img.shape[0] and point[0] >= 0 and point[0] < img.shape[1]:
+            img[point[1], point[0]] = color
