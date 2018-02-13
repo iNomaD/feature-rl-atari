@@ -118,11 +118,11 @@ class ImageProcessor:
         return self.feature_vector_size
 
 
-    def pipeline(self, original_image):
+    def pipeline(self, original_image, reward, terminal):
         cropped_image = self.crop_image(original_image)
         instances = self.detect_instances(cropped_image)
         features = self.generate_feature_vector(instances)
-        self.ipp.post_pipeline(original_image, instances, features)
+        self.ipp.post_pipeline(original_image, reward, terminal, instances, features)
         return features.to_raw()
 
 
