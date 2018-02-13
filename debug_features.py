@@ -10,6 +10,8 @@ parser.add_argument("-f", "--frames-to-images", action="store_true", default=Fal
     help="save frames as .bmp images")
 parser.add_argument("-d", "--debug", action="store_true", default=False,
     help="debug information")
+parser.add_argument("-b", "--save-best", action="store_true", default=False,
+    help="save best results")
 args = parser.parse_args()
 
 import environment
@@ -18,7 +20,7 @@ import numpy as np
 skip_start = 20
 
 # Make environment
-env = environment.GymEnvironment(args.game, args.frames_to_images, args.debug)
+env = environment.GymEnvironment(args.game, args.frames_to_images, args.debug, args.save_best)
 n_outputs = env.numActions()
 
 done = True

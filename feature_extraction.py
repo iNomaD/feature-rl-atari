@@ -1,9 +1,12 @@
 import itertools
 import os
 import sys
-import numpy as np
-from scipy.misc import toimage, imread, imsave
+
 import cv2
+import numpy as np
+from scipy.misc import imread
+
+import visualization
 
 
 class FeatureVector:
@@ -55,11 +58,8 @@ class FeatureVector:
 
 class ImageProcessor:
 
-    def __init__(self, env_id, frames_to_images, debug):
+    def __init__(self, env_id, frames_to_images=False, debug=False, save_best=False):
         self.env_id = env_id
-        self.frames_to_images = frames_to_images
-        self.debug = debug
-        self.frame = 0
 
         # load classes of game objects
         self.classes = []
@@ -97,6 +97,8 @@ class ImageProcessor:
         else:
             self.height_range = (0, 210)
 
+        self.ipp = visualization.ImagePostProcessor(env_id, self.height_range, frames_to_images, debug, save_best)
+
         # width and height for normalization
         self.width = 160
         self.height = self.height_range[1] - self.height_range[0]
@@ -111,20 +113,23 @@ class ImageProcessor:
         except:
             self.bg = None
 
+
     def get_feature_vector_size(self):
         return self.feature_vector_size
 
-    def pipeline(self, image):
-        image = self.crop_image(image)
-        instances = self.detect_instances(image)
+
+    def pipeline(self, original_image):
+        cropped_image = self.crop_image(original_image)
+        instances = self.detect_instances(cropped_image)
         features = self.generate_feature_vector(instances)
-        if self.debug:
-            print(features.to_raw())
+        self.ipp.post_pipeline(original_image, instances, features)
         return features.to_raw()
+
 
     def crop_image(self, image):
         h_beg, h_end = self.height_range
         return image[h_beg:h_end, ...]
+
 
     def remove_background(self, image):
         assert image.shape == self.bg.shape
@@ -135,23 +140,16 @@ class ImageProcessor:
         image[cond] = [0, 0, 0]
         return image
 
+
     def detect_instances(self, image):
-        palette = np.copy(image)
         instances = []
         for cls in self.classes:
-            obj = self.find_objects(image, cls, palette)
+            obj = self.find_objects(image, cls)
             instances.append(obj)
-
-        #toimage(image).show()
-        if self.frames_to_images:
-            if not os.path.exists('frames'):
-                os.makedirs('frames')
-            imsave('frames/'+str(self.frame)+'.png', palette)
-            self.frame = self.frame + 1
-
         return instances
 
-    def find_objects(self, image, templates, palette):
+
+    def find_objects(self, image, templates):
         # assume all the templates of the same class are the same color
         template = templates[0]
         h = template.shape[0]
@@ -182,10 +180,10 @@ class ImageProcessor:
             x, y, width, height = cv2.boundingRect(conts[i])
             for tpl in templates:
                 if tpl.shape[0] == height and tpl.shape[1] == width:
-                    cv2.rectangle(palette, (x-1, y-1), (x + width, y + height), (0, 255, 0), 1)
                     res.append((x, y, width, height))
                     break
         return res
+
 
     def generate_feature_vector(self, instances):
         vector = FeatureVector(self.n_class_instances, self.feature_vector_size)

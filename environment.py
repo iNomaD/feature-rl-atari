@@ -3,13 +3,13 @@ import feature_extraction
 
 class GymEnvironment():
 
-  def __init__(self, env_id, frames_to_images, debug):
+  def __init__(self, env_id, frames_to_images=False, debug=False, save_best=False):
     self.env_id = env_id
     self.gym = gym.make(env_id)
     self.obs = None
     self.terminal = None
 
-    self.ip = feature_extraction.ImageProcessor(env_id, frames_to_images, debug)
+    self.ip = feature_extraction.ImageProcessor(env_id, frames_to_images, debug, save_best)
 
     # Define actions for games (gym-0.9.4 and ALE 0.5.1)
     if env_id == "Pong-v0":
