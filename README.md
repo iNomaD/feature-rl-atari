@@ -6,7 +6,7 @@
 * Tensorflow
 * OpenAI Gym - Atari
 
-### Example of object recognition
+### Models after 48 hours of training
 ![Pong](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/Pong.gif)
 ![Breakout](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/Breakout.gif)
 ![SpaceInvaders](https://github.com/iNomaD/feature-rl-atari/blob/master/res/animation/SpaceInvaders.gif)
